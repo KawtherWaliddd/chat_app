@@ -74,8 +74,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           Navigator.pushReplacementNamed(
                             context,
                             'ChatScreen',
-                            arguments:
-                                email.text, // Pass the email to the ChatScreen
+                            arguments: email.text,
+                            // Pass the email to the ChatScreen
                           );
                         } on FirebaseAuthException catch (e) {
                           if (e.code == 'user-not-found') {
