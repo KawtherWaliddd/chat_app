@@ -1,4 +1,4 @@
-# 📱 Chat App
+#  Chat App 📱
 
 A **real-time chat application** built with **Flutter** and **Firebase**, allowing users to log in, register, and chat one-to-one in real-time.
 
@@ -41,6 +41,7 @@ A **real-time chat application** built with **Flutter** and **Firebase**, allowi
 
 👉 [Watch Demo Video](https://drive.google.com/file/d/18LV4VS1yM938qk03KBXSKJdoxraxh_s2/view?usp=sharing)
 
+---
 ## Getting Started
 
 1. **Clone the repository**
