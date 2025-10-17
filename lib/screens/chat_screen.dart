@@ -1,76 +1,70 @@
+import 'package:chat_app/busniess_logic/cubit/chat_cubit/chat_cubit.dart';
 import 'package:chat_app/models/message_model.dart';
 import 'package:chat_app/resources/app_text_styles.dart';
 import 'package:chat_app/resources/colors_manager.dart';
 import 'package:chat_app/widgets/chat_bubble_list.dart';
 import 'package:chat_app/widgets/input_message.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChatScreen extends StatelessWidget {
-  ChatScreen({super.key});
-  final TextEditingController messageController = TextEditingController();
-  final CollectionReference messages = FirebaseFirestore.instance.collection(
-    'messages',
-  );
-  final ScrollController listController = ScrollController();
+  const ChatScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final id = FirebaseAuth.instance.currentUser!.email!;
-    return StreamBuilder<QuerySnapshot>(
-      stream: messages.orderBy('timestamp', descending: false).snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          final List<MessageModel> messageList =
-              snapshot.data!.docs.map((doc) {
-                return MessageModel.fromJson(doc.data());
-              }).toList();
+    final chatCubit = context.read<ChatCubit>();
 
-          return Scaffold(
-            appBar: AppBar(
-              backgroundColor: ColorsManager.primaryColor,
-              centerTitle: true,
-              title: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset(
-                    width: 70,
-                    height: 70,
-                    'assets/images/scholar.png',
-                  ),
-                  Text('Chat', style: AppTextStyles.pacificoRegular),
-                ],
-              ),
-            ),
-            body: Column(
-              children: [
-                ChatBubbleList(
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: ColorsManager.primaryColor,
+        centerTitle: true,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(width: 70, height: 70, 'assets/images/scholar.png'),
+            Text('Chat', style: AppTextStyles.pacificoRegular),
+          ],
+        ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: chatCubit.getMessages(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return const Center(child: Text('Error loading messages'));
+                }
+
+                final List<MessageModel> messageList =
+                    snapshot.data!.docs
+                        .map(
+                          (doc) => MessageModel.fromJson(
+                            doc.data() as Map<String, dynamic>,
+                          ),
+                        )
+                        .toList();
+
+                return ChatBubbleList(
                   messageList: messageList,
-                  controller: listController,
-                ),
-                InputMessage(
-                  onSubmitted: (String message) {
-                    messages.add({
-                      'message': message,
-                      'id': id,
-                      'timestamp': DateTime.now(),
-                    });
-                    messageController.clear();
-                    listController.jumpTo(
-                      listController.position.maxScrollExtent,
-                    );
-                  },
-                  messageController: messageController,
-                ),
-              ],
+                  controller: chatCubit.listController,
+                );
+              },
             ),
-          );
-        } else if (snapshot.hasError) {
-          return const Center(child: Text("Has Error"));
-        } else {
-          return const Center(child: CircularProgressIndicator());
-        }
-      },
+          ),
+          InputMessage(
+            onSubmitted: (String message) {
+              chatCubit.sendMessage(message: message, email: id);
+            },
+            messageController: chatCubit.messageController,
+          ),
+        ],
+      ),
     );
   }
 }
